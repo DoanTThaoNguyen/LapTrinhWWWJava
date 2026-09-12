@@ -1,0 +1,157 @@
+package iuh.fit.doantthaonguyen_api;
+
+
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import model.User;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Path("/user")
+public class UserResource {
+
+    private static final List<User> userList = new ArrayList<>();
+
+    static {
+        userList.add(new User(1, "Mai Hoang", "hoang@gmail.com"));
+        userList.add(new User(2, "Lam Tong", "tong@gmail.com"));
+    }
+
+    // GET /api/user/view
+    @GET
+    @Path("/view")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String viewUser() {
+        return "Hoang Minh";
+    }
+
+    // GET /api/user/add/10/20
+    @GET
+    @Path("/add/{a}/{b}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public int add(
+            @PathParam("a") int a,
+            @PathParam("b") int b) {
+
+        return a + b;
+    }
+
+    // GET /api/user
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllUsers() {
+        return Response
+                .ok(userList)
+                .build();
+    }
+
+    // GET /api/user/{id}
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public User getUserById(
+            @PathParam("id") int id) {
+
+        return userList.stream()
+                .filter(user -> user.getId() == id)
+                .findFirst()
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "Không tìm thấy user có id = " + id
+                        )
+                );
+    }
+
+    // POST /api/user
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response createUser(User user) {
+
+        if (user == null) {
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity("User không hợp lệ")
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
+        }
+
+        userList.add(user);
+
+        return Response
+                .status(Response.Status.CREATED)
+                .entity(user)
+                .build();
+    }
+
+    // PUT /api/user/{id}
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateUser(
+            @PathParam("id") int id,
+            User updatedUser) {
+
+        if (updatedUser == null) {
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity("User không hợp lệ")
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
+        }
+
+        return userList.stream()
+                .filter(user -> user.getId() == id)
+                .findFirst()
+                .map(user -> {
+
+                    user.setName(updatedUser.getName());
+                    user.setEmail(updatedUser.getEmail());
+
+                    return Response
+                            .ok(user)
+                            .build();
+                })
+                .orElseGet(() ->
+                        Response
+                                .status(Response.Status.NOT_FOUND)
+                                .entity(
+                                        "Không tìm thấy user có id = " + id
+                                )
+                                .type(MediaType.TEXT_PLAIN)
+                                .build()
+                );
+    }
+
+    // DELETE /api/user/{id}
+    @DELETE
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteUser(
+            @PathParam("id") int id) {
+
+        User userToDelete = userList.stream()
+                .filter(user -> user.getId() == id)
+                .findFirst()
+                .orElse(null);
+
+        if (userToDelete == null) {
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity(
+                            "Không tìm thấy user có id = " + id
+                    )
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
+        }
+
+        userList.remove(userToDelete);
+
+        return Response
+                .ok(userToDelete)
+                .build();
+    }
+}
